@@ -45,113 +45,7 @@ var server = http.createServer((req, res) => {
 					if (err) console.error(err.message);
 				});
 
-				var kostList = {
-					'overall': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'bank': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'border': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'chalet': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'club house': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'coastline': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'consulate': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'favela': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'fortress': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'hereford': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'house': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'kafe': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'kanal': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'oregon': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'outback': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'plane': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'skyscraper': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'themepark': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'tower': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'villa': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-					'yacht': {
-						'kosts': [],
-						'attkosts': [],
-						'defkosts': []
-					},
-				}
+				var kostList = require('./kostlists.js');
 
 				db.serialize(() => {
 					if (get['profile']==undefined) {
@@ -193,112 +87,31 @@ var server = http.createServer((req, res) => {
 						return total/arr.length;
 					}
 
-					ret = ret.concat(tableData.toString()
+					var tableRep = tableData.toString()
 						// Overall stats
 						.replace("<!KOST>",    avg(kostList['overall'][   'kosts']))
 						.replace("<!ATTKOST>", avg(kostList['overall']['attkosts']))
-						.replace("<!DEFKOST>", avg(kostList['overall']['defkosts']))
+						.replace("<!DEFKOST>", avg(kostList['overall']['defkosts']));
 
-						// Bank stats
-						.replace("<!BANKKOST>",    avg(kostList['bank'][   'kosts']))
-						.replace("<!BANKATTKOST>", avg(kostList['bank']['attkosts']))
-						.replace("<!BANKDEFKOST>", avg(kostList['bank']['defkosts']))
+						// Map stats
+					Object.keys(kostList).forEach(key => {
+						if (key!="overall") {
+							tableRep = tableRep.replace(
+								"<!".concat(key.replace(" ","").toUpperCase()).concat("KOST>"),
+								avg(kostList[key]['kosts'])
+							);
+							tableRep = tableRep.replace(
+								"<!".concat(key.replace(" ","").toUpperCase()).concat("ATTKOST>"),
+								avg(kostList[key]['attkosts'])
+							);
+							tableRep = tableRep.replace(
+								"<!".concat(key.replace(" ","").toUpperCase()).concat("DEFKOST>"),
+								avg(kostList[key]['defkosts'])
+							);
+						}
+					});
 
-						// Border stats
-						.replace("<!BORDERKOST>",    avg(kostList['border'][   'kosts']))
-						.replace("<!BORDERATTKOST>", avg(kostList['border']['attkosts']))
-						.replace("<!BORDERDEFKOST>", avg(kostList['border']['defkosts']))
-
-						// Chalet stats
-						.replace("<!CHALETKOST>",    avg(kostList['chalet'][   'kosts']))
-						.replace("<!CHALETATTKOST>", avg(kostList['chalet']['attkosts']))
-						.replace("<!CHALETDEFKOST>", avg(kostList['chalet']['defkosts']))
-
-						// Club house stats
-						.replace("<!CLUBHOUSEKOST>",    avg(kostList['club house'][   'kosts']))
-						.replace("<!CLUBHOUSEATTKOST>", avg(kostList['club house']['attkosts']))
-						.replace("<!CLUBHOUSEDEFKOST>", avg(kostList['club house']['defkosts']))
-
-						// Coastline stats
-						.replace("<!COASTLINEKOST>",    avg(kostList['coastline'][   'kosts']))
-						.replace("<!COASTLINEATTKOST>", avg(kostList['coastline']['attkosts']))
-						.replace("<!COASTLINEDEFKOST>", avg(kostList['coastline']['defkosts']))
-
-						// Consulate stats
-						.replace("<!CONSULATEKOST>",    avg(kostList['consulate'][   'kosts']))
-						.replace("<!CONSULATEATTKOST>", avg(kostList['consulate']['attkosts']))
-						.replace("<!CONSULATEDEFKOST>", avg(kostList['consulate']['defkosts']))
-
-						// Favela stats
-						.replace("<!FAVELAKOST>",    avg(kostList['favela'][   'kosts']))
-						.replace("<!FAVELAATTKOST>", avg(kostList['favela']['attkosts']))
-						.replace("<!FAVELADEFKOST>", avg(kostList['favela']['defkosts']))
-
-						// Fortress stats
-						.replace("<!FORTRESSKOST>",    avg(kostList['fortress'][   'kosts']))
-						.replace("<!FORTRESSATTKOST>", avg(kostList['fortress']['attkosts']))
-						.replace("<!FORTRESSDEFKOST>", avg(kostList['fortress']['defkosts']))
-
-						// Hereford base stats
-						.replace("<!HEREFORDKOST>",    avg(kostList['hereford'][   'kosts']))
-						.replace("<!HEREFORDATTKOST>", avg(kostList['hereford']['attkosts']))
-						.replace("<!HEREFORDDEFKOST>", avg(kostList['hereford']['defkosts']))
-
-						// House stats
-						.replace("<!HOUSEKOST>",    avg(kostList['house'][   'kosts']))
-						.replace("<!HOUSEATTKOST>", avg(kostList['house']['attkosts']))
-						.replace("<!HOUSEDEFKOST>", avg(kostList['house']['defkosts']))
-
-						// Kafe Dostoyevsky stats
-						.replace("<!KAFEKOST>",    avg(kostList['kafe'][   'kosts']))
-						.replace("<!KAFEATTKOST>", avg(kostList['kafe']['attkosts']))
-						.replace("<!KAFEDEFKOST>", avg(kostList['kafe']['defkosts']))
-
-						// Kanal stats
-						.replace("<!KANALKOST>",    avg(kostList['kanal'][   'kosts']))
-						.replace("<!KANALATTKOST>", avg(kostList['kanal']['attkosts']))
-						.replace("<!KANALDEFKOST>", avg(kostList['kanal']['defkosts']))
-
-						// Oregon stats
-						.replace("<!OREGONKOST>",    avg(kostList['oregon'][   'kosts']))
-						.replace("<!OREGONATTKOST>", avg(kostList['oregon']['attkosts']))
-						.replace("<!OREGONDEFKOST>", avg(kostList['oregon']['defkosts']))
-
-						// Outback stats
-						.replace("<!OUTBACKKOST>",    avg(kostList['outback'][   'kosts']))
-						.replace("<!OUTBACKATTKOST>", avg(kostList['outback']['attkosts']))
-						.replace("<!OUTBACKDEFKOST>", avg(kostList['outback']['defkosts']))
-
-						// Presidential plane stats
-						.replace("<!PLANEKOST>",    avg(kostList['plane'][   'kosts']))
-						.replace("<!PLANEATTKOST>", avg(kostList['plane']['attkosts']))
-						.replace("<!PLANEDEFKOST>", avg(kostList['plane']['defkosts']))
-
-						// Skyscraper stats
-						.replace("<!SKYSCRAPERKOST>",    avg(kostList['skyscraper'][   'kosts']))
-						.replace("<!SKYSCRAPERATTKOST>", avg(kostList['skyscraper']['attkosts']))
-						.replace("<!SKYSCRAPERDEFKOST>", avg(kostList['skyscraper']['defkosts']))
-
-						// Theme park stats
-						.replace("<!THEMEPARKKOST>",    avg(kostList['themepark'][   'kosts']))
-						.replace("<!THEMEPARKATTKOST>", avg(kostList['themepark']['attkosts']))
-						.replace("<!THEMEPARKDEFKOST>", avg(kostList['themepark']['defkosts']))
-
-						// Tower stats
-						.replace("<!TOWERKOST>",    avg(kostList['tower'][   'kosts']))
-						.replace("<!TOWERATTKOST>", avg(kostList['tower']['attkosts']))
-						.replace("<!TOWERDEFKOST>", avg(kostList['tower']['defkosts']))
-
-						// Villa stats
-						.replace("<!VILLAKOST>",    avg(kostList['villa'][   'kosts']))
-						.replace("<!VILLAATTKOST>", avg(kostList['villa']['attkosts']))
-						.replace("<!VILLADEFKOST>", avg(kostList['villa']['defkosts']))
-
-						// Yatch stats
-						.replace("<!YACHTKOST>",    avg(kostList['yacht'][   'kosts']))
-						.replace("<!YACHTATTKOST>", avg(kostList['yacht']['attkosts']))
-						.replace("<!YACHTDEFKOST>", avg(kostList['yacht']['defkosts']))
-					);
+					ret+=tableRep;
 
 					fs.readFile(__dirname + "/indexEND.html", (endErr, endData) => {
 						if (endErr) throw endErr;
