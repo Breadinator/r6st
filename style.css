@@ -34,19 +34,31 @@ table {
 	width: 100%;
 }
 
-td:nth-child(3) {
+table#overview td:nth-child(3) {
 	text-align: left;
 	width: 50%;
 	padding-left: 1em;
 	border-left: 1px solid #EEEEEE;
 }
 
-td {
+table#overview td {
 	text-align: right;
 	width: 25%;
 	padding-right: 1em;
 }
 
-tr#top {
+table#overview tr#top {
 	border-top: 1px solid #EEEEEE;
+}
+
+table#games td {
+	text-align: center;
+}
+
+form#submit input[type="number"] {
+	width: 2em;
+}
+
+form#submit p {
+	margin-bottom: 0px;
 }

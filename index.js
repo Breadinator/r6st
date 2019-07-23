@@ -219,10 +219,44 @@ var server = http.createServer((req, res) => {
 				ret = ret.concat("<p>Filter: " + get['profile'] + "</p>");
 			}
 
-			fs.readFile(__dirname + "/gamesEND.html", (endErr, endData) => {
-				if (endErr) throw endErr;
-				ret = ret.concat(endData);
-				res.end(ret);
+			let db = new sqlite3.Database('./db/stats.db', err => {
+				if (err) console.error(err.message);
+			});
+
+			db.serialize(() => {
+				if (get['profile']==undefined) {
+					query = `SELECT * FROM stats ORDER BY id ASC, round ASC`;
+				} else {
+					query = `SELECT * FROM stats WHERE profile="`.concat(get['profile']).concat(`" ORDER BY id ASC, round ASC`);
+				}
+				db.each(query, (err, row) => {
+					if (err) console.error(err.message);
+					
+					ret+="<tr>";
+					ret+="<td>".concat(row.id).concat("</td>");
+					ret+="<td>".concat(row.profile).concat("</td>");
+					ret+="<td>".concat(row.date).concat("</td>");
+					ret+="<td>".concat(row.map).concat("</td>");
+					ret+="<td>".concat(row.round).concat("</td>");
+					ret+="<td>".concat(row.side).concat("</td>");
+					ret+="<td>".concat(row.result).concat("</td>");
+					ret+="<td>".concat(row.kills).concat("</td>");
+					ret+="<td>".concat(row.objectives).concat("</td>");
+					ret+="<td>".concat(row.survives).concat("</td>");
+					ret+="<td>".concat(row.trades).concat("</td>");
+					ret+="</tr>";
+				});
+			});
+
+			db.close(err => {
+				if (err) console.error(err.message);
+
+				fs.readFile(__dirname + "/gamesEND.html", (endErr, endData) => {
+					if (endErr) throw endErr;
+					ret = ret.concat(endData);
+					res.end(ret);
+				});
+
 			});
 			
 		});
@@ -234,14 +268,124 @@ var server = http.createServer((req, res) => {
 			ret = ret.concat(startData);
 
 			// SUBMIT ADDITIONS
-			ret = ret.concat("<p>WIP</p>");
+			if (req.method!='POST') {
 
+				// give form
+				fs.readFile(__dirname + "/submitFORM.html", (formErr, formData) => {
+					if (formErr) throw formErr;
 
-			fs.readFile(__dirname + "/submitEND.html", (endErr, endData) => {
-				if (endErr) throw endErr;
-				ret = ret.concat(endData);
-				res.end(ret);
-			});
+					var d = new Date()
+					var fd = d.getFullYear().toString().concat("/");
+					if ((d.getMonth()+1).toString().length==1) {
+						fd+="0".concat(d.getMonth()+1);
+					} else {
+						fd+=(d.getMonth()+1).toString();
+					}
+					fd+="/";
+					if (d.getDate().toString().length==1) {
+						fd+="0".concat(d.getDate());
+					} else {
+						fd+=d.getDate().toString();
+					}
+					ret = ret.concat(formData.toString().replace("<!DATE>", fd));
+				
+					fs.readFile(__dirname + "/submitEND.html", (endErr, endData) => {
+						if (endErr) throw endErr;
+						ret = ret.concat(endData);
+						res.end(ret);
+					});
+				});
+
+			} else {
+				// process submission
+				var body = '';
+				req.on('data', data => {
+					body+=data;
+				});
+				req.on('end', () => {
+					var postList = body.split(/&/);
+					var post = [];
+					for (var i = 0; i < postList.length; i++) {
+						var index = postList[i].substr(0, postList[i].indexOf("="));
+						var content = postList[i].substr(postList[i].indexOf("=") + 1);
+						post[index] = content;
+					}
+
+					let db = new sqlite3.Database('./db/stats.db', err => {
+						if (err) console.error(err.message);
+					});
+
+					var id;
+					db.serialize(() => {
+						db.each(`SELECT * FROM stats WHERE id=(SELECT MAX(id) FROM stats)`, (err, row) => {
+							id = row.id+1;
+						});
+					});
+
+					db.close(err => {
+						if (err) console.error(err.message);
+
+						let db2 = new sqlite3.Database('./db/stats.db', err => {
+							if (err) console.error(err.message);
+						});
+
+						var insertRound = n => {
+							if (!(post['r'+n+'side']
+								.concat(post['r'+n+'result'])
+								.concat(post['r'+n+'kills'])
+								.concat(post['r'+n+'objectives'])
+								.concat(post['r'+n+'survives'])
+								.concat(post['r'+n+'trades'])=="")) {
+
+								db2.run(`
+									INSERT INTO stats (
+										id,
+										profile,
+										date,
+										map,
+										round,
+										side,
+										result,
+										kills,
+										objectives,
+										survives,
+										trades)
+									VALUES (?,?,?,?,?,?,?,?,?,?,?)
+								`, 	[
+										id, 
+										post['profile'], 
+										post['date'].replace(/%2F/g, "/"), 
+										post['map'],
+										n,
+										post['r'+n+'side'],
+										post['r'+n+'result'],
+										post['r'+n+'kills'],
+										post['r'+n+'objectives'],
+										post['r'+n+'survives'],
+										post['r'+n+'trades']
+							   		]
+								), err => {
+									if (err) console.error(err.message);
+								};
+							}
+						}
+
+						for (var i = 1; i <10; i++) {
+							insertRound(i);
+						}
+
+						db2.close(err => {
+							ret+="<p>Sucessfully added.</p>";
+							fs.readFile(__dirname + "/submitEND.html", (endErr, endData) => {
+								if (endErr) throw endErr;
+								ret = ret.concat(endData);
+								res.end(ret);
+							});
+						});
+					});
+				});
+			}
+			
 		});
 	} else if (url=="/style.css") {
 		res.writeHead(200, {'Content-Type': 'text/css'});
