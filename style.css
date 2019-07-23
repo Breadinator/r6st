@@ -1,0 +1,24 @@
+body {
+	margin: 0px;
+}
+
+div#header a.selected {
+	background-color: #232323;
+	color: #fff;
+}
+
+div#header a {
+	background-color: #EEEEEE;
+	color: #000;
+	display: inline-block;
+	width: 50%;
+	margin: 0px;
+	text-align: center;
+	text-decoration: none;
+}
+
+div#main {
+	padding: 1em;
+}
+
+form#profileSelector {}
