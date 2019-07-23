@@ -272,7 +272,7 @@ var server = http.createServer((req, res) => {
 										id, 
 										post['profile'], 
 										post['date'].replace(/%2F/g, "/"), 
-										post['map'],
+										post['map'].replace("+", " "),
 										n,
 										post['r'+n+'side'],
 										post['r'+n+'result'],
