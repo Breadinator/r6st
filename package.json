@@ -1,0 +1,22 @@
+{
+  "name": "r6st",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node index"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Breadinator/r6st.git"
+  },
+  "author": "br3adina7or",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Breadinator/r6st/issues"
+  },
+  "homepage": "https://github.com/Breadinator/r6st#readme",
+  "dependencies": {
+    "sqlite3": "^4.0.9"
+  }
+}

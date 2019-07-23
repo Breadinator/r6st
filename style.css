@@ -7,18 +7,46 @@ div#header a.selected {
 	color: #fff;
 }
 
+div#header a.selected:hover {
+	background-color: #232323;
+}
+
 div#header a {
 	background-color: #EEEEEE;
 	color: #000;
 	display: inline-block;
-	width: 50%;
+	width: 33.3333%;
 	margin: 0px;
 	text-align: center;
 	text-decoration: none;
+}
+
+div#header a:hover {
+	background-color: #D8D8D8;
 }
 
 div#main {
 	padding: 1em;
 }
 
-form#profileSelector {}
+table {
+	border-collapse: collapse;
+	width: 100%;
+}
+
+td:nth-child(3) {
+	text-align: left;
+	width: 50%;
+	padding-left: 1em;
+	border-left: 1px solid #EEEEEE;
+}
+
+td {
+	text-align: right;
+	width: 25%;
+	padding-right: 1em;
+}
+
+tr#top {
+	border-top: 1px solid #EEEEEE;
+}
