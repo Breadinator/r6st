@@ -5,6 +5,8 @@ var http = require('http');
 var fs = require('fs');
 var sqlite3 = require('sqlite3');
 
+var ColourRange = require('./colour.js');
+
 var server = http.createServer((req, res) => {
 	var url = req.url;
 	var page;
@@ -56,22 +58,24 @@ var server = http.createServer((req, res) => {
 					db.each(query, (err, row) => {
 						if (err) console.error(err.message);
 
-						var kost;
-						if (row.kills+row.objectives+row.survives+row.trades==0) {
-							kost=0;
-						} else {
-							kost=1;
-						}
+						if (row.map!=""&&row.map!=null) {
+							var kost;
+							if (row.kills+row.objectives+row.survives+row.trades==0) {
+								kost=0;
+							} else {
+								kost=1;
+							}
 
-						kostList['overall']['kosts'].push(kost);
-						kostList[row.map]['kosts'].push(kost);
-						if (row.side=="attack") {
-							kostList['overall']['attkosts'].push(kost);
-							if (row.map!="" && row.map!=undefined) kostList[row.map]['attkosts'].push(kost);
-						}
-						if (row.side=="defence") {
-							kostList['overall']['defkosts'].push(kost);
-							if (row.map!="" && row.map!=undefined) kostList[row.map]['defkosts'].push(kost);
+							kostList['overall']['kosts'].push(kost);
+							kostList[row.map]['kosts'].push(kost);
+							if (row.side=="attack") {
+								kostList['overall']['attkosts'].push(kost);
+								if (row.map!="" && row.map!=undefined) kostList[row.map]['attkosts'].push(kost);
+							}
+							if (row.side=="defence") {
+								kostList['overall']['defkosts'].push(kost);
+								if (row.map!="" && row.map!=undefined) kostList[row.map]['defkosts'].push(kost);
+							}
 						}
 					});
 				});
@@ -79,11 +83,12 @@ var server = http.createServer((req, res) => {
 				db.close(err => {
 					if (err) console.error(err.message);
 
-					var avg = arr => {
+					var avg = (arr, round=true) => {
 						var total = 0;
 						for (var i = 0; i < arr.length; i++) {
 							total+=arr[i];
 						}
+						if (round) return (total/arr.length).toFixed(2);
 						return total/arr.length;
 					}
 
@@ -94,20 +99,104 @@ var server = http.createServer((req, res) => {
 						.replace("<!DEFKOST>", avg(kostList['overall']['defkosts']));
 
 						// Map stats
+					var kostset = [];
+					var attkostset = [];
+					var defkostset = [];
 					Object.keys(kostList).forEach(key => {
 						if (key!="overall") {
-							tableRep = tableRep.replace(
-								"<!".concat(key.replace(" ","").toUpperCase()).concat("KOST>"),
-								avg(kostList[key]['kosts'])
-							);
-							tableRep = tableRep.replace(
-								"<!".concat(key.replace(" ","").toUpperCase()).concat("ATTKOST>"),
-								avg(kostList[key]['attkosts'])
-							);
-							tableRep = tableRep.replace(
-								"<!".concat(key.replace(" ","").toUpperCase()).concat("DEFKOST>"),
-								avg(kostList[key]['defkosts'])
-							);
+							if (avg(kostList[key]['kosts'   ])!='NaN') kostset.push(   avg(kostList[key]['kosts'   ]));
+							if (avg(kostList[key]['attkosts'])!='NaN') attkostset.push(avg(kostList[key]['attkosts']));
+							if (avg(kostList[key]['defkosts'])!='NaN') defkostset.push(avg(kostList[key]['defkosts']));
+						}
+					});
+
+					Object.keys(kostList).forEach(key => {
+						if (key!="overall") {
+							let cr = new ColourRange();
+							kostcolour = cr.findColour(avg(kostList[key]['kosts']),kostset);
+							attkostcolour = cr.findColour(avg(kostList[key]['attkosts']),attkostset);
+							defkostcolour = cr.findColour(avg(kostList[key]['defkosts']),defkostset);
+
+							if (avg(kostList[key]['kosts'])=='NaN') {
+								tableRep = tableRep.replace(
+									"<!".concat(key.replace(" ","").toUpperCase()).concat("KOST>"),
+									"<span style='color:#E8E8E8''>-</span>"
+								);
+							} else {
+								if (kostcolour) {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("KOST>"),
+										"<span style='color:rgb("
+											.concat(kostcolour[0])
+											.concat(",")
+											.concat(kostcolour[1])
+											.concat(",")
+											.concat(kostcolour[2])
+											.concat(")'>")
+											.concat(avg(kostList[key]['kosts']))
+											.concat("</span>")
+									);
+								} else {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("KOST>"),
+										avg(kostList[key]['kosts'])
+									);
+								}
+							}
+
+							if (avg(kostList[key]['attkosts'])=='NaN') {
+								tableRep = tableRep.replace(
+									"<!".concat(key.replace(" ","").toUpperCase()).concat("ATTKOST>"),
+									"<span style='color:#E8E8E8''>-</span>"
+								);
+							} else {
+								if (attkostcolour) {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("ATTKOST>"),
+										"<span style='color:rgb("
+											.concat(attkostcolour[0])
+											.concat(",")
+											.concat(attkostcolour[1])
+											.concat(",")
+											.concat(attkostcolour[2])
+											.concat(")'>")
+											.concat(avg(kostList[key]['attkosts']))
+											.concat("</span>")
+									);
+								} else {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("ATTKOST>"),
+										avg(kostList[key]['attkosts'])
+									);
+								}
+							}
+
+							if (avg(kostList[key]['defkosts'])=='NaN') {
+								tableRep = tableRep.replace(
+									"<!".concat(key.replace(" ","").toUpperCase()).concat("DEFKOST>"),
+									"<span style='color:#E8E8E8''>-</span>"
+								);
+							} else {
+								if (defkostcolour) {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("DEFKOST>"),
+										"<span style='color:rgb("
+											.concat(defkostcolour[0])
+											.concat(",")
+											.concat(defkostcolour[1])
+											.concat(",")
+											.concat(defkostcolour[2])
+											.concat(")'>")
+											.concat(avg(kostList[key]['defkosts']))
+											.concat("</span>")
+									);
+								} else {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("DEFKOST>"),
+										avg(kostList[key]['defkosts'])
+									);
+								}
+							}
 						}
 					});
 
@@ -237,6 +326,7 @@ var server = http.createServer((req, res) => {
 						db.each(`SELECT * FROM stats WHERE id=(SELECT MAX(id) FROM stats)`, (err, row) => {
 							id = row.id+1;
 						});
+						if (id==undefined) id=1;
 					});
 
 					db.close(err => {

@@ -43,20 +43,12 @@ table {
 	width: 100%;
 }
 
-table#overview td:nth-child(3) {
-	text-align: left;
-	width: 50%;
-	padding-left: 1em;
-	border-left: 1px solid #EEEEEE;
-}
-
 table#overview td {
-	text-align: right;
-	width: 25%;
+	text-align: center;
 	padding-right: 1em;
 }
 
-table#overview tr#top {
+table#overview tr:not(:first-child) {
 	border-top: 1px solid #EEEEEE;
 }
 
