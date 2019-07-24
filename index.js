@@ -47,7 +47,7 @@ var server = http.createServer((req, res) => {
 					if (err) console.error(err.message);
 				});
 
-				var kostList = require('./kostlists.js');
+				let kostList = require('./kostlists.js');
 
 				db.serialize(() => {
 					if (get['profile']==undefined) {
@@ -70,11 +70,19 @@ var server = http.createServer((req, res) => {
 							kostList[row.map]['kosts'].push(kost);
 							if (row.side=="attack") {
 								kostList['overall']['attkosts'].push(kost);
-								if (row.map!="" && row.map!=undefined) kostList[row.map]['attkosts'].push(kost);
+								kostList[row.map]['attkosts'].push(kost);
 							}
 							if (row.side=="defence") {
 								kostList['overall']['defkosts'].push(kost);
-								if (row.map!="" && row.map!=undefined) kostList[row.map]['defkosts'].push(kost);
+								kostList[row.map]['defkosts'].push(kost);
+							}
+							if (row.kills!=undefined&&row.survives!=undefined&&row.kills!=null&&row.survives!=null) {
+								kostList['overall']['kills']+=row.kills;
+								kostList[row.map]['kills']+=row.kills;
+								if (row.survives==0) {
+									kostList['overall']['deaths']+=1;
+									kostList[row.map]['deaths']+=1;
+								}
 							}
 						}
 					});
@@ -96,26 +104,38 @@ var server = http.createServer((req, res) => {
 						// Overall stats
 						.replace("<!KOST>",    avg(kostList['overall'][   'kosts']))
 						.replace("<!ATTKOST>", avg(kostList['overall']['attkosts']))
-						.replace("<!DEFKOST>", avg(kostList['overall']['defkosts']));
+						.replace("<!DEFKOST>", avg(kostList['overall']['defkosts']))
+						.replace("<!KD>",         (kostList['overall']['kills'] / kostList['overall']['deaths']).toFixed(2));
+						
+						kostList['overall']['kills'] = 0;
+						kostList['overall']['deaths'] = 0;
 
 						// Map stats
 					var kostset = [];
 					var attkostset = [];
 					var defkostset = [];
+					var kds = [];
 					Object.keys(kostList).forEach(key => {
 						if (key!="overall") {
 							if (avg(kostList[key]['kosts'   ])!='NaN') kostset.push(   avg(kostList[key]['kosts'   ]));
 							if (avg(kostList[key]['attkosts'])!='NaN') attkostset.push(avg(kostList[key]['attkosts']));
 							if (avg(kostList[key]['defkosts'])!='NaN') defkostset.push(avg(kostList[key]['defkosts']));
+							
+							let kd = (kostList[key]['kills'] / kostList[key]['deaths']);
+							if (kd=='Infinity') kd=kostList[key]['kills'];
+							if (kostList[key]['kills']+kostList[key]['deaths']!=0) kds.push(kd);
 						}
 					});
 
 					Object.keys(kostList).forEach(key => {
 						if (key!="overall") {
 							let cr = new ColourRange();
-							kostcolour = cr.findColour(avg(kostList[key]['kosts']),kostset);
-							attkostcolour = cr.findColour(avg(kostList[key]['attkosts']),attkostset);
-							defkostcolour = cr.findColour(avg(kostList[key]['defkosts']),defkostset);
+							kostcolour    = cr.findColour(avg(kostList[key]['kosts'   ]),    kostset);
+							attkostcolour = cr.findColour(avg(kostList[key]['attkosts']), attkostset);
+							defkostcolour = cr.findColour(avg(kostList[key]['defkosts']), defkostset);
+							let kd = (kostList[key]['kills'] / kostList[key]['deaths']);
+							if (kd=='Infinity') kd=kostList[key]['kills'];
+							kdcolour = cr.findColour(kd, kds);
 
 							if (avg(kostList[key]['kosts'])=='NaN') {
 								tableRep = tableRep.replace(
@@ -197,6 +217,49 @@ var server = http.createServer((req, res) => {
 									);
 								}
 							}
+
+							if (kdcolour) {
+								if ((kostList[key]['kills'] / kostList[key]['deaths'])=='Infinity') {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("KD>"),
+										"<span style='color:rgb("
+											.concat(kdcolour[0])
+											.concat(",")
+											.concat(kdcolour[1])
+											.concat(",")
+											.concat(kdcolour[2])
+											.concat(")'>")
+											.concat(kostList[key]['kills'].toFixed(2))
+											.concat("</span>")
+									);
+								} else if (kostList[key]['deaths']==0) {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("KD>"),
+										"<span style='color:#E8E8E8''>-</span>"
+									);
+								} else {
+									tableRep = tableRep.replace(
+										"<!".concat(key.replace(" ","").toUpperCase()).concat("KD>"),
+										"<span style='color:rgb("
+											.concat(kdcolour[0])
+											.concat(",")
+											.concat(kdcolour[1])
+											.concat(",")
+											.concat(kdcolour[2])
+											.concat(")'>")
+											.concat((kostList[key]['kills'] / kostList[key]['deaths']).toFixed(2))
+											.concat("</span>")
+									);
+								}
+							} else {
+								tableRep = tableRep.replace(
+									"<!".concat(key.replace(" ","").toUpperCase()).concat("KD>"),
+									"<span style='color:#E8E8E8''>-</span>"
+								);
+							}
+							
+							kostList[key]['kills'] = 0;
+							kostList[key]['deaths'] = 0;
 						}
 					});
 
@@ -207,6 +270,7 @@ var server = http.createServer((req, res) => {
 						ret = ret.concat(endData);
 						res.end(ret);
 					});
+					kostList = {};
 				});
 			});
 

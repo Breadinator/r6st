@@ -19,7 +19,8 @@ class ColourRange {
 	findColour(value, dataset) {
 		if (dataset.indexOf(value)==-1) return false;
 
-		let valuePercentile = dataset.sort((a,b)=>{return a-b}).indexOf(value)/(dataset.length-1);
+		let basepos = dataset.length-dataset.sort((a,b)=>{return a-b}).reverse().indexOf(value)-1;
+		let valuePercentile = basepos/(dataset.length-1);
 		
 		if (valuePercentile==1) {
 			return this.range[2];
