@@ -7,7 +7,7 @@ In order to install and run an r6st server, one requires [Node.js](https://nodej
 # Installation
 In a terminal, run the following:
 
-1. `git clone https://github.com/Breadinator/r6st && cdst`
+1. `git clone https://github.com/Breadinator/r6st && cd r6st`
 2. `npm install sqlite3`
 
 # Usage
